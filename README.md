@@ -1,1 +1,1 @@
-All content in this repository is in the [Wiki][(https://github.com/inLeague/guides-and-documents/wiki)](https://github.com/inLeague/guides-and-documents/wiki/inLeague-20th-Anniversary-Edition-Community-Guide)
+All content in this repository is in the [Wiki][(https://github.com/inLeague/guides-and-documents/wiki/inLeague-20th-Anniversary-Edition-Community-Guide)
