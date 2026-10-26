@@ -1,0 +1,63 @@
+name: Wiki TOC maintenance
+
+# GitHub does not execute workflows stored in wiki repositories, so this
+# automation lives here (the main repo, on the default branch) and acts on the
+# wiki from outside. It replaces the never-runnable markdown-toc.yml that sat
+# unused in the wiki repo.
+on:
+  gollum:            # fires when a wiki page is created or updated
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Report only; do not push"
+        type: boolean
+        default: false
+
+concurrency:
+  group: wiki-toc
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout automation repo
+        uses: actions/checkout@v4
+
+      - name: Clone wiki
+        run: git clone "https://github.com/${GITHUB_REPOSITORY}.wiki.git" wiki
+
+      - name: Guard - skip if the last wiki commit is a TOC regen
+        id: guard
+        run: |
+          if git -C wiki log -1 --pretty=%s | grep -q '^chore: regenerate wiki TOCs'; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Last wiki commit is a TOC regen; nothing to do."
+          fi
+
+      - name: Regenerate TOCs
+        if: steps.guard.outputs.skip != 'true'
+        run: python3 scripts/wiki_toc.py wiki
+
+      - name: Show diff (dry run)
+        if: ${{ inputs.dry_run }}
+        run: git -C wiki --no-pager diff
+
+      - name: Commit and push (only if changed)
+        if: ${{ steps.guard.outputs.skip != 'true' && !inputs.dry_run }}
+        env:
+          WIKI_TOC_TOKEN: ${{ secrets.WIKI_TOC_TOKEN }}
+        run: |
+          cd wiki
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No TOC changes."
+            exit 0
+          fi
+          git config user.name "Karlin (inLeague AI)"
+          git config user.email "karlin-inleague-ai[bot]@users.noreply.github.com"
+          git commit -m "chore: regenerate wiki TOCs"
+          git push "https://x-access-token:${WIKI_TOC_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" HEAD:master
