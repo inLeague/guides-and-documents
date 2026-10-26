@@ -12,6 +12,10 @@ on:
         description: "Report only; do not push"
         type: boolean
         default: false
+  schedule:
+    # Weekly sweep: backstop for changes gollum does not catch (git-side wiki
+    # pushes have not been observed to fire gollum).
+    - cron: '23 13 * * 1'
 
 concurrency:
   group: wiki-toc
