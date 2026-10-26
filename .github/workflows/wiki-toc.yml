@@ -27,6 +27,14 @@ jobs:
       - name: Checkout automation repo
         uses: actions/checkout@v4
 
+      - name: Mint Karlin App token (scoped to this repository)
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: "Iv23liREdSymQWFiEyO5"
+          private-key: ${{ secrets.KARLIN_APP_PRIVATE_KEY }}
+          permission-contents: write
+
       - name: Clone wiki
         run: git clone "https://github.com/${GITHUB_REPOSITORY}.wiki.git" wiki
 
@@ -49,7 +57,7 @@ jobs:
       - name: Commit and push (only if changed)
         if: ${{ steps.guard.outputs.skip != 'true' && !inputs.dry_run }}
         env:
-          WIKI_TOC_TOKEN: ${{ secrets.WIKI_TOC_TOKEN }}
+          WIKI_TOC_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           cd wiki
           git add -A
